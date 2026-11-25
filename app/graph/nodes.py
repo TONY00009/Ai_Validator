@@ -288,8 +288,7 @@ def detect_contradictions_node(state: ValidatorState) -> dict[str, Any]:
 
     router = get_llm_router()
     numbered_summary = "\n".join(
-        f"{idx}. {c['claim_text']} "
-        f"[verdict={verdicts.get(c['claim_id'], {}).get('verdict', 'pending')}]"
+        f"{idx}. {c['claim_text']}"
         for idx, c in enumerate(claims, start=1)
     )
 

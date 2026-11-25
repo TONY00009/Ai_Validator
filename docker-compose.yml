@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: pgvector/pgvector:pg18-trixie
+    image: pgvector/pgvector:pg16
     container_name: ai_validator_postgres
     restart: unless-stopped
     environment:
@@ -8,14 +8,30 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ai_validator_dev_pass}
       POSTGRES_DB: ${POSTGRES_DB:-ai_validator_db}
     ports:
-      - "${POSTGRES_PORT:-5433}:5432"
+      - "5433:5432"
     volumes:
-      - ai_validator_pgdata:/var/lib/postgresql
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ai_validator} -d ${POSTGRES_DB:-ai_validator_db}"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+
+  api:
+    build: .
+    container_name: ai_validator_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ai_validator}:${POSTGRES_PASSWORD:-ai_validator_dev_pass}@postgres:5432/${POSTGRES_DB:-ai_validator_db}
+    ports:
+      - "8000:8000"
 
 volumes:
-  ai_validator_pgdata:
+  postgres_data:

@@ -62,7 +62,7 @@ class ContradictionItem(BaseModel):
 class ContradictionsOutput(BaseModel):
     contradictions: list[ContradictionItem] = Field(
         default_factory=list,
-        description="Pairs of claims that conflict with each other or with verified evidence.",
+        description="Pairs of claims that directly contradict each other inside the input text.",
     )
 
 

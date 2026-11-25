@@ -1,0 +1,404 @@
+{
+  "summary": {
+    "total_cases": 15,
+    "exact_action_accuracy_pct": 86.7,
+    "hallucination_catch_rate_pct": 100.0,
+    "clean_pass_accuracy_pct": 66.7,
+    "contradiction_catch_rate_pct": 100.0,
+    "avg_groq_judge_score_out_of_5": 5.0,
+    "groq_judge_justified_pct": 86.7,
+    "avg_latency_sec": 17.42
+  },
+  "cases": [
+    {
+      "case_id": "ACC-01",
+      "category": "accurate",
+      "expected_action": "PASS",
+      "actual_action": "PASS",
+      "trust_score": 100.0,
+      "exact_match": true,
+      "hallucination_safe": true,
+      "expect_contradiction": false,
+      "contradictions_found": 0,
+      "contradiction_hit": true,
+      "claim_count": 3,
+      "guardrail_flags": {
+        "numbers_mismatched": 0,
+        "names_mismatched": 0,
+        "quotes_mismatched": 0
+      },
+      "latency_sec": 13.12,
+      "judge": {
+        "judge_model": "groq/qwen/qwen3.8-27b",
+        "reasoning_quality": 5,
+        "decision_justified": true,
+        "critique": "The system correctly identified all claims as supported by the ground truth, resulting in a justified PASS action with a perfect trust score."
+      },
+      "error": null
+    },
+    {
+      "case_id": "ACC-02",
+      "category": "accurate",
+      "expected_action": "PASS",
+      "actual_action": "PASS",
+      "trust_score": 100.0,
+      "exact_match": true,
+      "hallucination_safe": true,
+      "expect_contradiction": false,
+      "contradictions_found": 0,
+      "contradiction_hit": true,
+      "claim_count": 3,
+      "guardrail_flags": {
+        "numbers_mismatched": 0,
+        "names_mismatched": 0,
+        "quotes_mismatched": 0
+      },
+      "latency_sec": 13.46,
+      "judge": {
+        "judge_model": "groq/qwen/qwen3.8-27b",
+        "reasoning_quality": 5,
+        "decision_justified": true,
+        "critique": "The system correctly identified all claims as supported by the ground truth, resulting in a justified PASS action with a perfect trust score."
+      },
+      "error": null
+    },
+    {
+      "case_id": "ACC-03",
+      "category": "accurate",
+      "expected_action": "PASS",
+      "actual_action": "FLAG",
+      "trust_score": 90.0,
+      "exact_match": false,
+      "hallucination_safe": false,
+      "expect_contradiction": false,
+      "contradictions_found": 1,
+      "contradiction_hit": false,
+      "claim_count": 4,
+      "guardrail_flags": {
+        "numbers_mismatched": 0,
+        "names_mismatched": 0,
+        "quotes_mismatched": 0
+      },
+      "latency_sec": 13.21,
+      "judge": {
+        "judge_model": "groq/qwen/qwen3.8-27b",
+        "reasoning_quality": 5,
+        "decision_justified": false,
+        "critique": "The system correctly identified all claims as supported with high confidence (90/100) but incorrectly issued a FLAG action instead of the expected PASS, likely due to a false positive contradiction count."
+      },
+      "error": null
+    },
+    {
+      "case_id": "NUM-01",
+      "category": "numeric_hallucination",
+      "expected_action": "BLOCK",
+      "actual_action": "BLOCK",
+      "trust_score": 0.0,
+      "exact_match": true,
+      "hallucination_safe": true,
+      "expect_contradiction": false,
+      "contradictions_found": 0,
+      "contradiction_hit": true,
+      "claim_count": 2,
+      "guardrail_flags": {
+        "numbers_mismatched": 2,
+        "names_mismatched": 0,
+        "quotes_mismatched": 0
+      },
+      "latency_sec": 6.62,
+      "judge": {
+        "judge_model": "groq/qwen/qwen3.8-27b",
+        "reasoning_quality": 5,
+        "decision_justified": true,
+        "critique": "The system correctly identified and rejected both numeric hallucinations with precise reasoning, leading to the appropriate BLOCK action."
+      },
+      "error": null
+    },
+    {
+      "case_id": "NUM-02",
+      "category": "numeric_hallucination",
+      "expected_action": "BLOCK",
+      "actual_action": "BLOCK",
+      "trust_score": 0.0,
+      "exact_match": true,
+      "hallucination_safe": true,
+      "expect_contradiction": false,
+      "contradictions_found": 1,
+      "contradiction_hit": false,
+      "claim_count": 2,
+      "guardrail_flags": {
+        "numbers_mismatched": 2,
+        "names_mismatched": 0,
+        "quotes_mismatched": 0
+      },
+      "latency_sec": 7.27,
+      "judge": {
+        "judge_model": "groq/qwen/qwen3.8-27b",
+        "reasoning_quality": 5,
+        "decision_justified": true,
+        "critique": "The system correctly identified and rejected both numeric hallucinations (950 vs 320 vans, 2023 vs 2025, Rs 18.5 vs 4.8 crore) with precise reasoning, justifying the BLOCK action."
+      },
+      "error": null
+    },
+    {
+      "case_id": "NUM-03",
+      "category": "numeric_hallucination",
+      "expected_action": "BLOCK",
+      "actual_action": "BLOCK",
+      "trust_score": 23.33,
+      "exact_match": true,
+      "hallucination_safe": true,
+      "expect_contradiction": false,
+      "contradictions_found": 1,
+      "contradiction_hit": false,
+      "claim_count": 3,
+      "guardrail_flags": {
+        "numbers_mismatched": 2,
+        "names_mismatched": 0,
+        "quotes_mismatched": 0
+      },
+      "latency_sec": 50.54,
+      "judge": {
+        "judge_model": "groq/qwen/qwen3.8-27b",
+        "reasoning_quality": 5,
+        "decision_justified": true,
+        "critique": "The system correctly identified the numeric hallucinations (9% vs 15% and 50% vs 20%) and justified the BLOCK action with precise evidence-based reasoning."
+      },
+      "error": null
+    },
+    {
+      "case_id": "ENT-01",
+      "category": "entity_swap",
+      "expected_action": "BLOCK",
+      "actual_action": "BLOCK",
+      "trust_score": 0.0,
+      "exact_match": true,
+      "hallucination_safe": true,
+      "expect_contradiction": false,
+      "contradictions_found": 0,
+      "contradiction_hit": true,
+      "claim_count": 3,
+      "guardrail_flags": {
+        "numbers_mismatched": 0,
+        "names_mismatched": 2,
+        "quotes_mismatched": 0
+      },
+      "latency_sec": 8.11,
+      "judge": {
+        "judge_model": "groq/qwen/qwen3.8-27b",
+        "reasoning_quality": 5,
+        "decision_justified": true,
+        "critique": "The system correctly identified all three entity swaps (location, person, investor) against the ground truth and justified the BLOCK action with accurate, specific reasoning."
+      },
+      "error": null
+    },
+    {
+      "case_id": "ENT-02",
+      "category": "entity_swap",
+      "expected_action": "BLOCK",
+      "actual_action": "BLOCK",
+      "trust_score": 0.0,
+      "exact_match": true,
+      "hallucination_safe": true,
+      "expect_contradiction": false,
+      "contradictions_found": 0,
+      "contradiction_hit": true,
+      "claim_count": 3,
+      "guardrail_flags": {
+        "numbers_mismatched": 0,
+        "names_mismatched": 3,
+        "quotes_mismatched": 1
+      },
+      "latency_sec": 10.39,
+      "judge": {
+        "judge_model": "groq/qwen/qwen3.8-27b",
+        "reasoning_quality": 5,
+        "decision_justified": true,
+        "critique": "The system correctly identified the entity swap (Tata Electronics vs Reliance Jio) and location swap (Dholera vs Noida), providing accurate, evidence-grounded reasons for rejecting each claim and issuing a BLOCK decision."
+      },
+      "error": null
+    },
+    {
+      "case_id": "ENT-03",
+      "category": "entity_swap",
+      "expected_action": "BLOCK",
+      "actual_action": "BLOCK",
+      "trust_score": 0.0,
+      "exact_match": true,
+      "hallucination_safe": true,
+      "expect_contradiction": false,
+      "contradictions_found": 0,
+      "contradiction_hit": true,
+      "claim_count": 3,
+      "guardrail_flags": {
+        "numbers_mismatched": 0,
+        "names_mismatched": 3,
+        "quotes_mismatched": 3
+      },
+      "latency_sec": 9.39,
+      "judge": {
+        "judge_model": "groq/qwen/qwen3.8-27b",
+        "reasoning_quality": 5,
+        "decision_justified": true,
+        "critique": "The system correctly identified the entity swap and blocked the input with a perfect trust score, providing accurate claim-level rejections based on the ground truth."
+      },
+      "error": null
+    },
+    {
+      "case_id": "CON-01",
+      "category": "contradiction",
+      "expected_action": "BLOCK",
+      "actual_action": "BLOCK",
+      "trust_score": 23.33,
+      "exact_match": true,
+      "hallucination_safe": true,
+      "expect_contradiction": true,
+      "contradictions_found": 1,
+      "contradiction_hit": true,
+      "claim_count": 3,
+      "guardrail_flags": {
+        "numbers_mismatched": 2,
+        "names_mismatched": 0,
+        "quotes_mismatched": 0
+      },
+      "latency_sec": 8.64,
+      "judge": {
+        "judge_model": "groq/qwen/qwen3.8-27b",
+        "reasoning_quality": 5,
+        "decision_justified": true,
+        "critique": "The system correctly identified the internal contradictions between the input claims and the ground truth evidence, accurately rejecting the false claims regarding revenue and layoffs while supporting the true claim, leading to a justified BLOCK action."
+      },
+      "error": null
+    },
+    {
+      "case_id": "CON-02",
+      "category": "contradiction",
+      "expected_action": "BLOCK",
+      "actual_action": "BLOCK",
+      "trust_score": 13.33,
+      "exact_match": true,
+      "hallucination_safe": true,
+      "expect_contradiction": true,
+      "contradictions_found": 2,
+      "contradiction_hit": true,
+      "claim_count": 3,
+      "guardrail_flags": {
+        "numbers_mismatched": 1,
+        "names_mismatched": 0,
+        "quotes_mismatched": 0
+      },
+      "latency_sec": 9.31,
+      "judge": {
+        "judge_model": "groq/qwen/qwen3.8-27b",
+        "reasoning_quality": 5,
+        "decision_justified": true,
+        "critique": "The system correctly identified the internal contradiction between the opening of the plant in 2025 and the claims of it never opening or being delayed to 2028, justifying the BLOCK action with clear, evidence-based reasoning."
+      },
+      "error": null
+    },
+    {
+      "case_id": "CON-03",
+      "category": "contradiction",
+      "expected_action": "BLOCK",
+      "actual_action": "BLOCK",
+      "trust_score": 23.33,
+      "exact_match": true,
+      "hallucination_safe": true,
+      "expect_contradiction": true,
+      "contradictions_found": 1,
+      "contradiction_hit": true,
+      "claim_count": 3,
+      "guardrail_flags": {
+        "numbers_mismatched": 2,
+        "names_mismatched": 0,
+        "quotes_mismatched": 0
+      },
+      "latency_sec": 10.29,
+      "judge": {
+        "judge_model": "groq/qwen/qwen3.8-27b",
+        "reasoning_quality": 5,
+        "decision_justified": true,
+        "critique": "The system correctly identified the direct contradiction between the claimed net loss and the ground truth net profit, as well as the discrepancy in fleet size, justifying the BLOCK action with clear, evidence-based reasoning."
+      },
+      "error": null
+    },
+    {
+      "case_id": "MIX-01",
+      "category": "mixed_borderline",
+      "expected_action": "FLAG",
+      "actual_action": "FLAG",
+      "trust_score": 66.67,
+      "exact_match": true,
+      "hallucination_safe": true,
+      "expect_contradiction": false,
+      "contradictions_found": 0,
+      "contradiction_hit": true,
+      "claim_count": 3,
+      "guardrail_flags": {
+        "numbers_mismatched": 1,
+        "names_mismatched": 0,
+        "quotes_mismatched": 0
+      },
+      "latency_sec": 8.14,
+      "judge": {
+        "judge_model": "groq/qwen/qwen3.8-27b",
+        "reasoning_quality": 5,
+        "decision_justified": true,
+        "critique": "The system correctly identified the numerical discrepancy in the scooter range (310 km vs 145 km) and appropriately flagged the input due to this contradiction."
+      },
+      "error": null
+    },
+    {
+      "case_id": "MIX-02",
+      "category": "mixed_borderline",
+      "expected_action": "FLAG",
+      "actual_action": "BLOCK",
+      "trust_score": 40.0,
+      "exact_match": false,
+      "hallucination_safe": true,
+      "expect_contradiction": false,
+      "contradictions_found": 1,
+      "contradiction_hit": false,
+      "claim_count": 3,
+      "guardrail_flags": {
+        "numbers_mismatched": 1,
+        "names_mismatched": 1,
+        "quotes_mismatched": 0
+      },
+      "latency_sec": 74.84,
+      "judge": {
+        "judge_model": "groq/qwen/qwen3.8-27b",
+        "reasoning_quality": 5,
+        "decision_justified": false,
+        "critique": "The system correctly identified the factual contradiction regarding the export percentage but incorrectly issued a BLOCK action instead of the expected FLAG, likely due to an overly strict penalty for the minor entity omission in the second claim."
+      },
+      "error": null
+    },
+    {
+      "case_id": "MIX-03",
+      "category": "mixed_borderline",
+      "expected_action": "FLAG",
+      "actual_action": "FLAG",
+      "trust_score": 65.0,
+      "exact_match": true,
+      "hallucination_safe": true,
+      "expect_contradiction": false,
+      "contradictions_found": 1,
+      "contradiction_hit": false,
+      "claim_count": 4,
+      "guardrail_flags": {
+        "numbers_mismatched": 1,
+        "names_mismatched": 0,
+        "quotes_mismatched": 0
+      },
+      "latency_sec": 17.93,
+      "judge": {
+        "judge_model": "groq/qwen/qwen3.8-27b",
+        "reasoning_quality": 5,
+        "decision_justified": true,
+        "critique": "The system correctly identified the numerical discrepancy regarding the number of enterprise clients (2,500 vs 140) and appropriately flagged the input based on this contradiction."
+      },
+      "error": null
+    }
+  ]
+}
