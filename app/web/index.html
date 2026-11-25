@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ai_Validator · Multi-Model Fact-Checking & Guardrail Engine</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>" />
+  <style>
+    :root {
+      --bg: #0b1020;
+      --surface: #121a2e;
+      --surface-2: #18233d;
+      --border: #263455;
+      --text: #e6edf7;
+      --muted: #93a4c3;
+      --accent: #4f8cff;
+      --accent-hover: #3b76e8;
+      --pass: #22c55e;
+      --pass-bg: rgba(34, 197, 94, 0.14);
+      --flag: #f59e0b;
+      --flag-bg: rgba(245, 158, 11, 0.14);
+      --block: #ef4444;
+      --block-bg: rgba(239, 68, 68, 0.14);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 28px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; }
+    .brand span {
+      font-size: 0.75rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    .header-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .api-key-box {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .api-key-box input {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      outline: none;
+      width: 150px;
+      font-family: monospace;
+      font-size: 0.82rem;
+    }
+    .status-pill {
+      font-size: 0.78rem;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .status-pill.ok { color: var(--pass); border-color: rgba(34,197,94,0.4); }
+    .status-pill.err { color: var(--block); border-color: rgba(239,68,68,0.4); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 20px;
+      max-width: 1400px;
+      margin: 22px auto;
+      padding: 0 22px 40px;
+    }
+    @media (max-width: 960px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+    }
+    .card h2 { font-size: 1rem; margin-bottom: 12px; color: var(--text); }
+
+    /* Sidebar */
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.78rem;
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--accent); }
+    .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 72vh; overflow-y: auto; }
+    .history-item {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .history-item:hover { border-color: var(--accent); }
+    .history-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      font-size: 0.75rem;
+    }
+    .history-preview {
+      font-size: 0.82rem;
+      color: var(--muted);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Main Panel */
+    .main-stack { display: flex; flex-direction: column; gap: 18px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+    .tab-btn {
+      flex: 1;
+      padding: 10px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .tab-btn.active {
+      background: rgba(79, 140, 255, 0.15);
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    label { display: block; font-size: 0.84rem; color: var(--muted); margin-bottom: 6px; }
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 12px;
+      font-size: 0.92rem;
+      font-family: inherit;
+      resize: vertical;
+      outline: none;
+    }
+    textarea:focus { border-color: var(--accent); }
+
+    .file-drop {
+      margin-top: 12px;
+      padding: 12px;
+      background: var(--bg);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+    }
+    .file-drop input[type="file"] { color: var(--muted); font-size: 0.86rem; width: 100%; }
+
+    .form-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .sample-links { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.92rem;
+      cursor: pointer;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .error-banner {
+      display: none;
+      padding: 12px 14px;
+      border-radius: 8px;
+      background: var(--block-bg);
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      color: #fecaca;
+      font-size: 0.88rem;
+      margin-top: 12px;
+    }
+
+    .loader {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Report Section */
+    #reportSection { display: none; flex-direction: column; gap: 16px; }
+    .summary-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .badge-pass, .badge-supported { background: var(--pass-bg); color: var(--pass); }
+    .badge-flag, .badge-partial { background: var(--flag-bg); color: var(--flag); }
+    .badge-block, .badge-rejected { background: var(--block-bg); color: var(--block); }
+    .badge-action-lg { font-size: 1rem; padding: 6px 16px; }
+
+    .score-wrap { min-width: 220px; }
+    .score-num { font-size: 1.5rem; font-weight: 800; }
+    .progress-track {
+      height: 8px;
+      background: var(--bg);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .progress-fill { height: 100%; border-radius: 999px; transition: width 0.35s ease; }
+
+    .contradictions-box {
+      display: none;
+      background: var(--block-bg);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .contradictions-box h3 { font-size: 0.92rem; color: #fca5a5; margin-bottom: 6px; }
+    .contradictions-box ul { padding-left: 18px; font-size: 0.86rem; color: #fee2e2; }
+
+    .claims-grid { display: flex; flex-direction: column; gap: 12px; }
+    .claim-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .claim-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .claim-text { font-weight: 600; font-size: 0.95rem; flex: 1; }
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 8px 0;
+      font-size: 0.76rem;
+    }
+    .pill {
+      padding: 2px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--muted);
+    }
+    .pill.ok { color: var(--pass); border-color: rgba(34,197,94,0.35); }
+    .pill.fail { color: var(--block); border-color: rgba(239,68,68,0.35); }
+
+    .quote-box {
+      background: var(--bg);
+      border-left: 3px solid var(--accent);
+      padding: 8px 12px;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.84rem;
+      color: #cbd5e1;
+      margin: 8px 0;
+      font-style: italic;
+    }
+    .reason-text { font-size: 0.86rem; color: var(--muted); }
+    .source-line { margin-top: 8px; font-size: 0.8rem; color: var(--muted); }
+    .source-line a { color: var(--accent); text-decoration: none; }
+    .source-line a:hover { text-decoration: underline; }
+
+    details.audit-details {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+    details.audit-details summary { cursor: pointer; font-weight: 600; font-size: 0.88rem; }
+    .audit-list { margin-top: 10px; padding-left: 18px; font-size: 0.82rem; color: var(--muted); }
+    .audit-list li { margin-bottom: 4px; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>🛡️ Ai_Validator</h1>
+      <span>LangGraph · Multi-Model · Deterministic Guardrails</span>
+    </div>
+    <div class="header-controls">
+      <div class="api-key-box">
+        <span>X-API-Key:</span>
+        <input id="apiKeyInput" type="password" value="aiv_dev_secret_123" />
+      </div>
+      <span id="healthBadge" class="status-pill">Checking DB...</span>
+      <a href="/docs" target="_blank" class="btn-ghost" style="text-decoration:none;">Swagger /docs</a>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- Left Sidebar: Recent Runs -->
+    <aside class="card">
+      <div class="sidebar-header">
+        <h2 style="margin:0;">Recent Runs</h2>
+        <button class="btn-ghost" onclick="loadHistory()">Refresh</button>
+      </div>
+      <div id="historyList" class="history-list">
+        <div style="font-size:0.84rem;color:var(--muted);">Loading recent runs...</div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-stack">
+      <section class="card">
+        <div class="tabs">
+          <button id="tabWeb" class="tab-btn active" onclick="switchMode('web')">
+            🌐 Live Web Fact-Check
+          </button>
+          <button id="tabPdf" class="tab-btn" onclick="switchMode('pdf')">
+            📄 PDF Ground-Truth Audit
+          </button>
+        </div>
+
+        <label for="inputText">Paste AI-generated text, summary, or factual claims to verify:</label>
+        <textarea
+          id="inputText"
+          placeholder="Example: The Reserve Bank of India is headquartered in Mumbai and was established in 1935."
+        ></textarea>
+
+        <div id="pdfUploadWrap" class="file-drop hidden">
+          <label for="pdfFile">Upload Ground-Truth PDF (max 10 MB):</label>
+          <input id="pdfFile" type="file" accept=".pdf,application/pdf" />
+        </div>
+
+        <div class="form-footer">
+          <div class="sample-links">
+            <button class="btn-ghost" onclick="loadSample('true')">Sample: Accurate Claim</button>
+            <button class="btn-ghost" onclick="loadSample('hallucination')">Sample: Hallucination + Contradiction</button>
+          </div>
+          <button id="verifyBtn" class="btn-primary" onclick="runVerification()">
+            Run Fact-Check
+          </button>
+        </div>
+        <div id="errorBanner" class="error-banner"></div>
+      </section>
+
+      <div id="loader" class="loader">
+        <div class="spinner"></div>
+        <div id="loaderText">Running LangGraph pipeline (Extracting claims → Searching evidence → Cross-model verification → Guardrails)...</div>
+      </div>
+
+      <section id="reportSection">
+        <div class="card">
+          <div class="summary-bar">
+            <div>
+              <div style="font-size:0.78rem;color:var(--muted);margin-bottom:6px;">
+                GUARDRAIL DECISION · <span id="reportMeta"></span>
+              </div>
+              <span id="actionBadge" class="badge badge-action-lg">PASS</span>
+            </div>
+            <div class="score-wrap">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                <span style="font-size:0.8rem;color:var(--muted);">Trust Score</span>
+                <span id="scoreText" class="score-num">0 / 100</span>
+              </div>
+              <div class="progress-track">
+                <div id="scoreFill" class="progress-fill" style="width:0%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="contradictionsBox" class="contradictions-box">
+          <h3>⚠️ Contradictions Detected</h3>
+          <ul id="contradictionsList"></ul>
+        </div>
+
+        <div class="card">
+          <h2>Claim-by-Claim Verification & Deterministic Guardrails</h2>
+          <div id="claimsGrid" class="claims-grid"></div>
+        </div>
+
+        <details class="audit-details">
+          <summary id="auditSummary">📜 Pipeline Audit Trail</summary>
+          <ol id="auditList" class="audit-list"></ol>
+        </details>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    let currentMode = "web";
+
+    const apiKeyInput = document.getElementById("apiKeyInput");
+    const savedKey = localStorage.getItem("aiv_api_key");
+    if (savedKey) apiKeyInput.value = savedKey;
+    apiKeyInput.addEventListener("change", () => {
+      localStorage.setItem("aiv_api_key", apiKeyInput.value.trim());
+      loadHistory();
+    });
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function safeUrl(url) {
+      if (!url) return "";
+      const trimmed = url.trim();
+      return /^https?:\/\//i.test(trimmed) ? trimmed : "";
+    }
+
+    function switchMode(mode) {
+      currentMode = mode;
+      document.getElementById("tabWeb").classList.toggle("active", mode === "web");
+      document.getElementById("tabPdf").classList.toggle("active", mode === "pdf");
+      document.getElementById("pdfUploadWrap").classList.toggle("hidden", mode !== "pdf");
+      hideError();
+    }
+
+    function loadSample(type) {
+      const box = document.getElementById("inputText");
+      if (type === "true") {
+        box.value = "ISRO's Chandrayaan-3 successfully landed near the lunar south pole in August 2023, making India the fourth country to achieve a soft landing on the Moon.";
+      } else {
+        box.value = "India's Chandrayaan-3 landed on the Moon in August 2023. However, ISRO launched Chandrayaan-3 in 2025 with a crew of three astronauts, and it landed on Mars instead of the Moon.";
+      }
+      switchMode("web");
+    }
+
+    function showError(msg) {
+      const el = document.getElementById("errorBanner");
+      el.textContent = msg;
+      el.style.display = "block";
+    }
+
+    function hideError() {
+      document.getElementById("errorBanner").style.display = "none";
+    }
+
+    async function checkHealth() {
+      const badge = document.getElementById("healthBadge");
+      try {
+        const res = await fetch("/health");
+        const data = await res.json();
+        if (res.ok && data.status === "ok") {
+          badge.textContent = "● API & Postgres Online";
+          badge.className = "status-pill ok";
+        } else {
+          badge.textContent = "● DB Issue";
+          badge.className = "status-pill err";
+        }
+      } catch {
+        badge.textContent = "● Server Offline";
+        badge.className = "status-pill err";
+      }
+    }
+
+    async function loadHistory() {
+      const list = document.getElementById("historyList");
+      try {
+        const res = await fetch("/v1/runs?limit=12", {
+          headers: { "X-API-Key": apiKeyInput.value.trim() },
+        });
+        if (!res.ok) {
+          list.innerHTML = `<div style="font-size:0.82rem;color:#fca5a5;">Auth failed (check X-API-Key).</div>`;
+          return;
+        }
+        const data = await res.json();
+        if (!data.runs || data.runs.length === 0) {
+          list.innerHTML = `<div style="font-size:0.82rem;color:var(--muted);">No runs yet. Run your first fact-check!</div>`;
+          return;
+        }
+        list.innerHTML = data.runs
+          .map((r) => {
+            const action = (r.verdict_action || r.status || "run").toLowerCase();
+            const score = r.trust_score !== null && r.trust_score !== undefined ? `${r.trust_score}/100` : "—";
+            return `
+              <div class="history-item" onclick="openRun('${escapeHtml(r.run_id)}')">
+                <div class="history-meta">
+                  <span class="badge badge-${escapeHtml(action)}">${escapeHtml(r.verdict_action || r.status)}</span>
+                  <span style="color:var(--muted);">${escapeHtml(r.mode)} · ${escapeHtml(score)}</span>
+                </div>
+                <div class="history-preview">${escapeHtml(r.input_preview)}</div>
+              </div>
+            `;
+          })
+          .join("");
+      } catch (err) {
+        list.innerHTML = `<div style="font-size:0.82rem;color:#fca5a5;">Could not load history.</div>`;
+      }
+    }
+
+    async function openRun(runId) {
+      hideError();
+      try {
+        const res = await fetch(`/v1/runs/${encodeURIComponent(runId)}`, {
+          headers: { "X-API-Key": apiKeyInput.value.trim() },
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showError(data.detail || "Failed to load run report.");
+          return;
+        }
+        renderReport(data);
+      } catch (err) {
+        showError(`Error loading run: ${err.message}`);
+      }
+    }
+
+    async function runVerification() {
+      hideError();
+      const text = document.getElementById("inputText").value.trim();
+      const apiKey = apiKeyInput.value.trim();
+
+      if (text.length < 10) {
+        showError("Please enter at least 10 characters of text to verify.");
+        return;
+      }
+
+      const btn = document.getElementById("verifyBtn");
+      const loader = document.getElementById("loader");
+      btn.disabled = true;
+      loader.style.display = "flex";
+      document.getElementById("reportSection").style.display = "none";
+
+      try {
+        let res;
+        if (currentMode === "web") {
+          res = await fetch("/v1/verify", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-API-Key": apiKey,
+            },
+            body: JSON.stringify({
+              input_text: text,
+              mode: "web_check",
+              max_retries: 1,
+            }),
+          });
+        } else {
+          const fileInput = document.getElementById("pdfFile");
+          if (!fileInput.files || fileInput.files.length === 0) {
+            showError("Please choose a PDF file to audit against.");
+            return;
+          }
+          const formData = new FormData();
+          formData.append("input_text", text);
+          formData.append("file", fileInput.files[0]);
+
+          res = await fetch("/v1/verify-pdf", {
+            method: "POST",
+            headers: { "X-API-Key": apiKey },
+            body: formData,
+          });
+        }
+
+        const data = await res.json();
+        if (!res.ok) {
+          showError(data.detail || `Request failed (${res.status})`);
+          return;
+        }
+
+        renderReport(data);
+        loadHistory();
+      } catch (err) {
+        showError(`Network error: ${err.message}`);
+      } finally {
+        btn.disabled = false;
+        loader.style.display = "none";
+      }
+    }
+
+    function renderReport(report) {
+      const section = document.getElementById("reportSection");
+      section.style.display = "flex";
+
+      const action = report.verdict_action || "FLAG";
+      const score = Number(report.trust_score ?? 0);
+
+      document.getElementById("reportMeta").textContent =
+        `${report.mode} · run ${String(report.run_id || "").slice(0, 8)}`;
+
+      const actionBadge = document.getElementById("actionBadge");
+      actionBadge.textContent = action;
+      actionBadge.className = `badge badge-action-lg badge-${action.toLowerCase()}`;
+
+      document.getElementById("scoreText").textContent = `${score} / 100`;
+      const fill = document.getElementById("scoreFill");
+      fill.style.width = `${Math.max(0, Math.min(100, score))}%`;
+      fill.style.background =
+        action === "PASS" ? "var(--pass)" : action === "FLAG" ? "var(--flag)" : "var(--block)";
+
+      // Contradictions
+      const cBox = document.getElementById("contradictionsBox");
+      const cList = document.getElementById("contradictionsList");
+      if (report.contradictions && report.contradictions.length > 0) {
+        cBox.style.display = "block";
+        cList.innerHTML = report.contradictions
+          .map((c) => `<li>${escapeHtml(c.summary)}</li>`)
+          .join("");
+      } else {
+        cBox.style.display = "none";
+      }
+
+      // Claims
+      const grid = document.getElementById("claimsGrid");
+      if (!report.claims || report.claims.length === 0) {
+        grid.innerHTML = `<div style="color:var(--muted);font-size:0.9rem;">No verifiable factual claims were extracted from this input.</div>`;
+      } else {
+        grid.innerHTML = report.claims
+          .map((c) => {
+            const v = (c.verdict || "rejected").toLowerCase();
+            const g = c.guardrails || {};
+            const quoteHtml = c.verbatim_quote
+              ? `<div class="quote-box">“${escapeHtml(c.verbatim_quote)}”</div>`
+              : "";
+
+            let sourceHtml = "";
+            if (c.source) {
+              const href = safeUrl(c.source.url);
+              const titleText = escapeHtml(c.source.title || c.source.domain || "Source");
+              const link = href
+                ? `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${titleText}</a>`
+                : `<strong>${titleText}</strong>`;
+              sourceHtml = `<div class="source-line">Source: ${link} · <span class="pill">Tier ${escapeHtml(c.source.quality_tier)}</span></div>`;
+            }
+
+            return `
+              <div class="claim-card">
+                <div class="claim-top">
+                  <div class="claim-text">${escapeHtml(c.claim_index)}. ${escapeHtml(c.claim_text)}</div>
+                  <span class="badge badge-${escapeHtml(v)}">${escapeHtml(v)}</span>
+                </div>
+                <div class="meta-row">
+                  <span class="pill">Model: ${escapeHtml(c.model_used || "—")}</span>
+                  <span class="pill ${g.quote_matched ? "ok" : "fail"}">Quote ${g.quote_matched ? "✓" : "✗"}</span>
+                  <span class="pill ${g.names_matched ? "ok" : "fail"}">Names ${g.names_matched ? "✓" : "✗"}</span>
+                  <span class="pill ${g.numbers_matched ? "ok" : "fail"}">Numbers ${g.numbers_matched ? "✓" : "✗"}</span>
+                  ${c.retry_count > 0 ? `<span class="pill">Web Retries: ${escapeHtml(c.retry_count)}</span>` : ""}
+                </div>
+                ${quoteHtml}
+                <div class="reason-text">${escapeHtml(c.reason || "")}</div>
+                ${sourceHtml}
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      // Audit Trail
+      const trail = report.audit_trail || [];
+      document.getElementById("auditSummary").textContent =
+        `📜 Pipeline Audit Trail (${trail.length} events)`;
+      document.getElementById("auditList").innerHTML = trail
+        .map((ev) => `<li><strong>[${escapeHtml(ev.stage)}]</strong> ${escapeHtml(ev.message)}</li>`)
+        .join("");
+    }
+
+    checkHealth();
+    loadHistory();
+  </script>
+</body>
+</html>

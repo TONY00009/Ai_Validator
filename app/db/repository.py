@@ -326,3 +326,32 @@ def delete_run(run_id: str) -> None:
         with conn.cursor() as cur:
             cur.execute("DELETE FROM runs WHERE id = %s", (run_id,))
         conn.commit()
+
+def list_recent_runs(limit: int = 10) -> list[dict[str, Any]]:
+    """Returns a lightweight summary list of the most recent verification runs."""
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, mode, input_text, status, verdict_action,
+                       trust_score, created_at
+                FROM runs
+                ORDER BY created_at DESC
+                LIMIT %s
+                """,
+                (limit,),
+            )
+            rows = cur.fetchall()
+
+    return [
+        {
+            "run_id": str(r["id"]),
+            "mode": r["mode"],
+            "input_preview": (r["input_text"] or "")[:120],
+            "status": r["status"],
+            "verdict_action": r["verdict_action"],
+            "trust_score": r["trust_score"],
+            "created_at": r["created_at"].isoformat() if r["created_at"] else None,
+        }
+        for r in rows
+    ]
