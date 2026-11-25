@@ -226,26 +226,88 @@
       margin-top: 12px;
     }
 
-    .loader {
+    /* Live Streaming Progress Panel */
+    .progress-panel {
       display: none;
-      align-items: center;
-      gap: 12px;
-      padding: 18px;
+      flex-direction: column;
+      gap: 10px;
+      padding: 16px 18px;
       background: var(--surface);
-      border: 1px solid var(--border);
+      border: 1px solid rgba(79, 140, 255, 0.45);
       border-radius: 12px;
-      color: var(--muted);
-      font-size: 0.9rem;
     }
-    .spinner {
-      width: 20px;
-      height: 20px;
-      border: 3px solid var(--border);
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.84rem;
+      color: var(--muted);
+    }
+    .progress-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .pulse-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.35; transform: scale(0.8); }
+    }
+    .progress-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .step-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.86rem;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+    }
+    .step-row.running {
+      border-color: rgba(79, 140, 255, 0.5);
+      color: var(--text);
+    }
+    .step-row.done {
+      border-color: rgba(34, 197, 94, 0.3);
+      color: var(--muted);
+    }
+    .step-icon {
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.85rem;
+    }
+    .spinner-sm {
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--border);
       border-top-color: var(--accent);
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+      animation: spin 0.75s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+    .step-time {
+      margin-left: auto;
+      font-family: monospace;
+      font-size: 0.76rem;
+      color: var(--muted);
+    }
 
     /* Report Section */
     #reportSection { display: none; flex-direction: column; gap: 16px; }
@@ -414,10 +476,17 @@
         <div id="errorBanner" class="error-banner"></div>
       </section>
 
-      <div id="loader" class="loader">
-        <div class="spinner"></div>
-        <div id="loaderText">Running LangGraph pipeline (Extracting claims → Searching evidence → Cross-model verification → Guardrails)...</div>
-      </div>
+      <!-- Live Streaming Progress Panel -->
+      <section id="progressPanel" class="progress-panel">
+        <div class="progress-header">
+          <div class="progress-title">
+            <span class="pulse-dot"></span>
+            <span>Live Pipeline Activity</span>
+          </div>
+          <span id="elapsedTimer" style="font-family:monospace;">0.0s</span>
+        </div>
+        <div id="progressSteps" class="progress-steps"></div>
+      </section>
 
       <section id="reportSection">
         <div class="card">
@@ -460,6 +529,8 @@
 
   <script>
     let currentMode = "web";
+    let timerInterval = null;
+    let streamStartMs = 0;
 
     const apiKeyInput = document.getElementById("apiKeyInput");
     const savedKey = localStorage.getItem("aiv_api_key");
@@ -510,6 +581,73 @@
 
     function hideError() {
       document.getElementById("errorBanner").style.display = "none";
+    }
+
+    function getElapsedSec() {
+      return ((Date.now() - streamStartMs) / 1000).toFixed(1) + "s";
+    }
+
+    function startProgressPanel() {
+      const panel = document.getElementById("progressPanel");
+      const stepsEl = document.getElementById("progressSteps");
+      const timerEl = document.getElementById("elapsedTimer");
+
+      stepsEl.innerHTML = "";
+      panel.style.display = "flex";
+      streamStartMs = Date.now();
+      timerEl.textContent = "0.0s";
+
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        timerEl.textContent = getElapsedSec();
+      }, 100);
+    }
+
+    function stopProgressPanel(hide = false) {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      if (hide) {
+        document.getElementById("progressPanel").style.display = "none";
+      }
+    }
+
+    function handleStatusUpdate(payload) {
+      const stepsEl = document.getElementById("progressSteps");
+      const activeRow = stepsEl.querySelector('.step-row[data-state="running"]');
+
+      if (payload.state === "done") {
+        if (activeRow) {
+          activeRow.setAttribute("data-state", "done");
+          activeRow.className = "step-row done";
+          activeRow.innerHTML = `
+            <span class="step-icon" style="color:var(--pass);">✓</span>
+            <span>${escapeHtml(payload.message)}</span>
+            <span class="step-time">${escapeHtml(getElapsedSec())}</span>
+          `;
+        } else {
+          const row = document.createElement("div");
+          row.className = "step-row done";
+          row.setAttribute("data-state", "done");
+          row.innerHTML = `
+            <span class="step-icon" style="color:var(--pass);">✓</span>
+            <span>${escapeHtml(payload.message)}</span>
+            <span class="step-time">${escapeHtml(getElapsedSec())}</span>
+          `;
+          stepsEl.appendChild(row);
+        }
+      } else {
+        const row = document.createElement("div");
+        row.className = "step-row running";
+        row.setAttribute("data-state", "running");
+        row.innerHTML = `
+          <span class="step-icon"><span class="spinner-sm"></span></span>
+          <span>${escapeHtml(payload.message)}</span>
+          <span class="step-time">live</span>
+        `;
+        stepsEl.appendChild(row);
+      }
     }
 
     async function checkHealth() {
@@ -567,6 +705,7 @@
 
     async function openRun(runId) {
       hideError();
+      stopProgressPanel(true);
       try {
         const res = await fetch(`/v1/runs/${encodeURIComponent(runId)}`, {
           headers: { "X-API-Key": apiKeyInput.value.trim() },
@@ -582,6 +721,32 @@
       }
     }
 
+    function processSseBlock(block) {
+      let eventName = "message";
+      const dataLines = [];
+      for (const rawLine of block.split("\n")) {
+        const line = rawLine.trimEnd();
+        if (line.startsWith("event:")) {
+          eventName = line.slice(6).trim();
+        } else if (line.startsWith("data:")) {
+          dataLines.push(line.slice(5).trim());
+        }
+      }
+      if (!dataLines.length) return;
+
+      const payload = JSON.parse(dataLines.join("\n"));
+      if (eventName === "status") {
+        handleStatusUpdate(payload);
+      } else if (eventName === "result" && payload.report) {
+        stopProgressPanel(true);
+        renderReport(payload.report);
+        loadHistory();
+      } else if (eventName === "error") {
+        stopProgressPanel(true);
+        showError(payload.detail || "Verification failed during pipeline execution.");
+      }
+    }
+
     async function runVerification() {
       hideError();
       const text = document.getElementById("inputText").value.trim();
@@ -592,16 +757,23 @@
         return;
       }
 
+      if (currentMode === "pdf") {
+        const fileInput = document.getElementById("pdfFile");
+        if (!fileInput.files || fileInput.files.length === 0) {
+          showError("Please choose a PDF file to audit against.");
+          return;
+        }
+      }
+
       const btn = document.getElementById("verifyBtn");
-      const loader = document.getElementById("loader");
       btn.disabled = true;
-      loader.style.display = "flex";
       document.getElementById("reportSection").style.display = "none";
+      startProgressPanel();
 
       try {
         let res;
         if (currentMode === "web") {
-          res = await fetch("/v1/verify", {
+          res = await fetch("/v1/verify/stream", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -615,34 +787,54 @@
           });
         } else {
           const fileInput = document.getElementById("pdfFile");
-          if (!fileInput.files || fileInput.files.length === 0) {
-            showError("Please choose a PDF file to audit against.");
-            return;
-          }
           const formData = new FormData();
           formData.append("input_text", text);
           formData.append("file", fileInput.files[0]);
 
-          res = await fetch("/v1/verify-pdf", {
+          res = await fetch("/v1/verify-pdf/stream", {
             method: "POST",
             headers: { "X-API-Key": apiKey },
             body: formData,
           });
         }
 
-        const data = await res.json();
         if (!res.ok) {
-          showError(data.detail || `Request failed (${res.status})`);
+          let detail = `Request failed (${res.status})`;
+          try {
+            const errJson = await res.json();
+            detail = errJson.detail || detail;
+          } catch {}
+          stopProgressPanel(true);
+          showError(detail);
           return;
         }
 
-        renderReport(data);
-        loadHistory();
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const blocks = buffer.split("\n\n");
+          buffer = blocks.pop() || "";
+
+          for (const block of blocks) {
+            if (block.trim()) processSseBlock(block);
+          }
+        }
+
+        if (buffer.trim()) {
+          processSseBlock(buffer);
+        }
       } catch (err) {
+        stopProgressPanel(true);
         showError(`Network error: ${err.message}`);
       } finally {
         btn.disabled = false;
-        loader.style.display = "none";
+        stopProgressPanel(false);
       }
     }
 
