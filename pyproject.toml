@@ -1,0 +1,38 @@
+[project]
+name = "ai-validator"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Mayank Sharma", email = "mayanksharma5191@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "beautifulsoup4>=4.15.0",
+    "ddgs>=9.16.1",
+    "google-genai>=3.6.1",
+    "groq>=1.7.0",
+    "httpx>=0.28.1",
+    "openai>=3.57.0",
+    "pgvector>=0.5.1",
+    "psycopg-pool>=3.3.3",
+    "psycopg[binary]>=3.3.9",
+    "pydantic-settings>=2.16.3",
+    "pypdf>=7.1.1",
+    "python-dotenv>=1.2.4",
+    "tavily-python>=0.8.5",
+    "tenacity>=9.1.4",
+]
+
+[project.scripts]
+ai-validator = "ai_validator:main"
+
+[build-system]
+requires = ["uv_build>=0.12.20,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "ruff>=0.17.6",
+]
